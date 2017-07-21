@@ -1,4 +1,5 @@
 require 'bundler/setup'
+require 'byebug'
 require 'ssstats'
 
 RSpec.configure do |config|
