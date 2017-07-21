@@ -1,8 +1,6 @@
-# Ssstats
+# SSStats - Stupid Simple Statistics (for unstructured data)
 
-Welcome to your new gem! In this directory, you'll find the files you need to be able to package up your Ruby library into a gem. Put your Ruby code in the file `lib/ssstats`. To experiment with that code, run `bin/console` for an interactive prompt.
-
-TODO: Delete this and the text above, and describe your gem
+Consumes simple data structures, produces elementary statistics
 
 ## Installation
 
@@ -22,7 +20,18 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+```ruby
+require 'ssstats'
+
+stats = Ssstats.new
+
+stats << {weather: {temperature: 32.0}, score: {'Real' => 2, 'Barcelona' => 2}}
+stats << {weather: "freezing", score: {'Real' => 1, 'Barcelona' => 0}}
+
+stats.schema  # {'weather' => [{'temperature' => 0.0}, ""], 'score' => {'Real' => 0, 'Barcelona' => 0}}
+
+stats.avg  # {'.Hash.length' => 2.0, 'weather.Hash.length' => 1.0, 'weather.temperature.Float' => 32.0, 'score.Hash.length' => 2.0, 'score.Real.Integer' => 1.5, 'score.Barcelona.Integer' => 1.0, 'weather.String.length' => 8.0}
+```
 
 ## Development
 
@@ -32,5 +41,5 @@ To install this gem onto your local machine, run `bundle exec rake install`. To 
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/Costa Shapiro/ssstats.
+Bug reports and pull requests are welcome on GitHub at https://github.com/bandmanage/ssstats.
 

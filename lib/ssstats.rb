@@ -1,5 +1,16 @@
 require 'ssstats/version'
 
-module Ssstats
-  # Your code goes here...
+class Ssstats
+
+  def <<(datum)
+    # TODO
+  end
+
+  def schema
+    # TODO
+  end
+
+  def avg
+    # TODO
+  end
 end
