@@ -15,13 +15,28 @@ class Ssstats
     clone @schema
   end
 
+  def stat(key)
+    stats.transform_values{|col| col[key]}.compact
+  end
+
+  def count
+    stat :count
+  end
+
+  def count
+    stat :sum
+  end
+
   def avg
-    stats.transform_values{|col| col[:avg]}.compact
+    stat :avg
+  end
+
+  def sd
+    stat :sd
   end
 
   private
 
-  # TODO be lazy
   def stats
     clone @stats
   end
@@ -33,7 +48,16 @@ class Ssstats
       (schema || {}).tap do |schema|
         datum.keys.each do |key|
           key_s = key.to_s
-          schema[key_s] = combine_schema(schema[key_s], stat_schema(datum[key], schema[key_s], stats, path + [key_s]))
+          key_s += "'"  while schema[key_s] && schema[key_s].class != datum[key].class
+          schema[key_s] = stat_schema(datum[key], schema[key_s], stats, path + [key_s])
+        end
+      end
+    elsif datum.respond_to? :each
+      (schema || []).tap do |schema|
+        datum.each do |el|
+          el_schema = schema.find{|e| e.class == el.class}
+          new_schema = stat_schema(el, el_schema, stats, path + [datum.class.name])
+          schema << new_schema  unless el_schema
         end
       end
     else
@@ -64,24 +88,18 @@ class Ssstats
   def num_stat(stat, num)
     stat[:sum] ||= 0
     stat[:sum] += num
-    stat[:avg] = stat[:sum].to_f / stat[:count]
+    stat[:avg] ||= 0.0
+    # NOTE ref https://www.johndcook.com/blog/standard_deviation
+    avg_was = stat[:avg]
+    stat[:avg] += (num - avg_was) / stat[:count]  # NOTE count is not zero here
+    stat[:delta_squares_sum] ||= 0.0
+    stat[:delta_squares_sum] += (num - avg_was) * (num - stat[:avg])
+    stat[:sd] = Math.sqrt(stat[:delta_squares_sum] / stat[:count])
   end
 
   def stat_count(stat)
     stat[:count] ||= 0
     stat[:count] += 1
-  end
-
-  def combine_schema(curr_rep, new_rep)
-    if !curr_rep
-      new_rep
-    elsif curr_rep.is_a?(Array) && !curr_rep.empty?
-      curr_rep + [new_rep]  unless curr_rep.any?{|r| r.class == new_rep.class}
-    elsif curr_rep != new_rep
-      [curr_rep, new_rep]
-    else
-      curr_rep
-    end
   end
 
   def clone(thing)
