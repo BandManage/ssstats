@@ -1,6 +1,7 @@
-require 'ssstats/version'
 
 class Ssstats
+
+  CURRENTLY_AVAILABLE = %i[count sum avg sd]
 
   def initialize
     @stats = {}
@@ -15,31 +16,21 @@ class Ssstats
     clone @schema
   end
 
-  def stat(key)
-    stats.transform_values{|col| col[key]}.compact
-  end
-
-  def count
-    stat :count
-  end
-
-  def count
-    stat :sum
-  end
-
-  def avg
-    stat :avg
-  end
-
-  def sd
-    stat :sd
-  end
-
-  private
-
   def stats
     clone @stats
   end
+
+  def stat(key)
+    @stats.transform_values{|col| col[key]}.compact
+  end
+
+  CURRENTLY_AVAILABLE.each do |calc|
+    define_method calc do
+      stat calc
+    end
+  end
+
+  private
 
   def stat_schema(datum, schema, stats, path=[])
     stat_add path.join('.'), datum
@@ -48,31 +39,34 @@ class Ssstats
       (schema || {}).tap do |schema|
         datum.keys.each do |key|
           key_s = key.to_s
-          key_s += "'"  while schema[key_s] && schema[key_s].class != datum[key].class
+          key_s += "'"  while schema[key_s] && class_of(schema[key_s]) != class_of(datum[key])
           schema[key_s] = stat_schema(datum[key], schema[key_s], stats, path + [key_s])
         end
       end
     elsif datum.respond_to? :each
       (schema || []).tap do |schema|
         datum.each do |el|
-          el_schema = schema.find{|e| e.class == el.class}
-          new_schema = stat_schema(el, el_schema, stats, path + [datum.class.name])
+          el_schema = schema.find{|e| class_of(e) == class_of(el)}
+          new_schema = stat_schema(el, el_schema, stats, path + [class_of(datum)])
           schema << new_schema  unless el_schema
         end
       end
     else
       if datum.class.respond_to? :new
         datum.class.new
-      elsif Kernel.respond_to? datum.class.name  # NOTE the case of Numeric's
-        send datum.class.name, 0
       else
-        fail "Can't represent #{datum}"
+        rep_class = datum.class
+        while rep_class  # NOTE this complication is due to cases like the Fixnum's
+          return send rep_class.name, 0  if Kernel.respond_to? rep_class.name  # NOTE the case of Numeric's
+          rep_class = rep_class.superclass
+        end
+        fail "Can't represent #{datum} (#{datum.class.name})"
       end
     end
   end
 
   def stat_add(key, val)
-    stat_key = [key, val.class.name].join('.')
+    stat_key = [key, class_of(val)].join('.')
     val_stat = @stats[stat_key] ||= {}
     stat_count val_stat
 
@@ -104,5 +98,15 @@ class Ssstats
 
   def clone(thing)
     Marshal.load Marshal.dump thing
+  end
+
+  def class_of(datum)
+    if datum.respond_to? :keys
+      Hash
+    elsif datum.respond_to? :each
+      Array
+    else
+      datum.class
+    end
   end
 end
