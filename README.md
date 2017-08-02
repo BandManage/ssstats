@@ -25,13 +25,22 @@ require 'ssstats'
 
 stats = Ssstats.new
 
-stats << {weather: {temperature: 32.0}, score: {'Real' => 2, 'Barcelona' => 2}}
-stats << {weather: "freezing", score: {'Real' => 1, 'Barcelona' => 0}}
+stats << {weather: {temperature: 32.0}, score: {"Real" => 2, "Barcelona" => 2}}
+stats << {weather: "freezing", score: {"Real" => 1, "Barcelona" => 0}}
 
-stats.schema  # {'weather' => [{'temperature' => 0.0}, ""], 'score' => {'Real' => 0, 'Barcelona' => 0}}
+stats.schema  # {"weather" => {"temperature" => 0.0}, "weather'" => "", "score" => {"Real" => 0, "Barcelona" => 0}}
 
-stats.avg  # {'.Hash.length' => 2.0, 'weather.Hash.length' => 1.0, 'weather.temperature.Float' => 32.0, 'score.Hash.length' => 2.0, 'score.Real.Integer' => 1.5, 'score.Barcelona.Integer' => 1.0, 'weather.String.length' => 8.0}
+stats.avg  # {".Hash.length" => 2.0, "weather.Hash.length" => 1.0, "weather.temperature.Float" => 32.0, "score.Hash.length" => 2.0, "score.Real.Integer" => 1.5, "score.Barcelona.Integer" => 1.0, "weather'.String.length" => 8.0}
 ```
+
+Currently,
+
+- count
+- sum
+- avg
+- sd
+
+are the stats instantly available. Do ask for more.
 
 ## Development
 
