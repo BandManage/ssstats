@@ -35,12 +35,14 @@ stats.avg  # {".Hash.length" => 2.0, "weather.Hash.length" => 1.0, "weather.temp
 
 Currently,
 
-- count
+- qty
+- min
+- max
 - sum
 - avg
-- sd
+- std
 
-are the stats instantly available. Do ask for more.
+are the stats instantly available for numeric data (and for lengths of non-numeric data). Do ask for more.
 
 ## Development
 
