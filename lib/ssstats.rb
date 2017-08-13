@@ -1,7 +1,8 @@
 
 class Ssstats
 
-  CURRENTLY_AVAILABLE = %i[count sum avg sd]
+  # TODO 2-sigma stats
+  CURRENTLY_AVAILABLE = %i[qty min max sum avg std]
 
   def initialize
     @stats = {}
@@ -80,20 +81,36 @@ class Ssstats
   end
 
   def num_stat(stat, num)
-    stat[:sum] ||= 0
-    stat[:sum] += num
-    stat[:avg] ||= 0.0
-    # NOTE ref https://www.johndcook.com/blog/standard_deviation
-    avg_was = stat[:avg]
-    stat[:avg] += (num - avg_was) / stat[:count]  # NOTE count is not zero here
-    stat[:delta_squares_sum] ||= 0.0
-    stat[:delta_squares_sum] += (num - avg_was) * (num - stat[:avg])
-    stat[:sd] = Math.sqrt(stat[:delta_squares_sum] / stat[:count])
+    num_stat_min_max stat, num
+    num_stat_sum stat, num
+    num_stat_avg_std stat, num
   end
 
   def stat_count(stat)
-    stat[:count] ||= 0
-    stat[:count] += 1
+    stat[:qty] ||= 0
+    stat[:qty] += 1
+  end
+
+  def num_stat_min_max(stat, num)
+    stat[:min] ||= num
+    stat[:min] = num  if num < stat[:min]
+    stat[:max] ||= num
+    stat[:max] = num  if num > stat[:max]
+  end
+
+  def num_stat_sum(stat, num)
+    stat[:sum] ||= 0
+    stat[:sum] += num
+  end
+
+  def num_stat_avg_std(stat, num)
+    # NOTE ref https://www.johndcook.com/blog/standard_deviation
+    stat[:avg] ||= 0.0
+    avg_was = stat[:avg]
+    stat[:avg] += (num - avg_was) / stat[:qty]  # NOTE qty is not zero here
+    stat[:delta_squares_sum] ||= 0.0
+    stat[:delta_squares_sum] += (num - avg_was) * (num - stat[:avg])
+    stat[:std] = Math.sqrt(stat[:delta_squares_sum] / stat[:qty])
   end
 
   def clone(thing)

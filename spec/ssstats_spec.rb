@@ -15,6 +15,9 @@ RSpec.describe Ssstats do
       eq ".Hash.length" => 2.0, "weather.Hash.length" => 1.0, "weather.temperature.Float" => 32.0,
          "score.Hash.length" => 2.0, "score.Real.Integer" => 1.5, "score.Barcelona.Integer" => 1.0, "weather'.String.length" => 8.0
     )
+    Ssstats::CURRENTLY_AVAILABLE.each do |calc|
+      expect(subject.stat calc).to_not be_empty, "#{calc} be calculated"
+    end
   end
 
   it "collects useful statistics off simply (and loosely) structured data" do
@@ -27,7 +30,7 @@ RSpec.describe Ssstats do
       eq 'did' => "", 'ts' => 0, 'sd' => [{'os' => 0, 'hz' => 0.0, 'error' => 0}]
     )
 
-    expect(subject.sd).to(
+    expect(subject.std).to(
       eq '.Hash.length' => 0.0, 'ts.Integer' => 746.7002410606281, 'sd.Array.length' => 1.479019945774904, 'sd.Array.Hash.length' => 0.0, 'sd.Array.os.Integer' => 39.17152235062235,
          'sd.Array.hz.Float' => 1.9022391776243297, 'sd.Array.error.Integer' => 0.0, 'did.String.length' => 0.0
     )
@@ -42,7 +45,7 @@ RSpec.describe Ssstats do
       eq 'uid' => "", 'ts' => 0, 'sdHz' => [0.0], 'sdOs' => [0]
     )
 
-    expect(subject.sd).to(
+    expect(subject.std).to(
       eq '.Hash.length' => 0.0, 'ts.Integer' => 504.79104587938167, 'sdHz.Array.length' => 1.632993161855452, 'sdHz.Array.Float' => 1.9022391776243297,
          'sdOs.Array.length' => 1.632993161855452, 'sdOs.Array.Integer' => 27.00874344026804, 'uid.String.length' => 0.0
     )
