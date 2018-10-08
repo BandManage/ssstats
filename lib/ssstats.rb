@@ -1,12 +1,18 @@
 
 class Ssstats
 
+  Infinity = 1.0/0.0
+
   # TODO 2-sigma stats
   CURRENTLY_AVAILABLE = %i[qty min max sum avg std]
+
+  EBD_BUCKET_COUNT_MAX = 15
+  EBD_BUCKET_PWR_MIN = -10  # NOTE 10 means there can be ... -2...-1 -1...-0.5 ... -0.0009765625...0.0009765625 ... 0.5...1 1...2 ...
 
   def initialize
     @stats = {}
     @schema = {}
+    @ebd_cache = {}
   end
 
   def <<(datum)
@@ -84,6 +90,7 @@ class Ssstats
     num_stat_min_max stat, num
     num_stat_sum stat, num
     num_stat_avg_std stat, num
+    num_stat_ebd stat, num
   end
 
   def stat_count(stat)
@@ -113,6 +120,18 @@ class Ssstats
     stat[:std] = Math.sqrt(stat[:delta_squares_sum] / stat[:qty])
   end
 
+  def num_stat_ebd(stat, num)
+    stat[:ebd] ||= []
+    if (b = bucket_find(stat[:ebd], num))
+      b[:qty] += 1
+    else
+      idx = bucket_idx(stat[:ebd], num)
+      stat[:ebd].insert idx, bucket_new(num)
+      bucket_trim!(stat[:ebd], idx > stat[:ebd].length/2)  if
+        stat[:ebd].length > EBD_BUCKET_COUNT_MAX
+    end
+  end
+
   def clone(thing)
     Marshal.load Marshal.dump thing
   end
@@ -124,6 +143,45 @@ class Ssstats
       Array
     else
       datum.class
+    end
+  end
+
+  def bucket_find(ebd, num)
+    ebd.find{|b| b[:lim] === num}
+  end
+
+  def bucket_idx(ebd, num)
+    ebd.index{|b| num < b[:lim].first} || ebd.length
+  end
+
+  def bucket_lim(num)
+    abs_pwr =
+      if num != 0
+        Math.log(num.abs * 2**(-EBD_BUCKET_PWR_MIN), 2).to_i + EBD_BUCKET_PWR_MIN
+      else
+        -Infinity
+      end
+    if abs_pwr < EBD_BUCKET_PWR_MIN
+      -2**EBD_BUCKET_PWR_MIN...2**EBD_BUCKET_PWR_MIN
+    else
+      sign = num <=> 0
+      sign*2**(abs_pwr + (1 - sign)/2)...sign*2**(abs_pwr + (1 + sign)/2)
+    end
+  end
+
+  def bucket_new(num)
+    {lim: bucket_lim(num), qty: 1}
+  end
+
+  def bucket_trim!(ebd, last)
+    if last
+      ebd[-2][:qty] += ebd[-1][:qty]
+      ebd[-2][:lim] = ebd[-2][:lim].first..Infinity
+      ebd.pop
+    else
+      ebd[1][:qty] += ebd[0][:qty]
+      ebd[1][:lim] = -Infinity..ebd[1][:lim].last
+      ebd.shift
     end
   end
 end

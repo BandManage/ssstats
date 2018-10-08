@@ -41,6 +41,7 @@ Currently,
 - sum
 - avg
 - std
+- ebd (exponential bucket distribution)
 
 are the stats instantly available for numeric data (and for lengths of non-numeric data). Do ask for more.
 
